@@ -19,37 +19,25 @@ namespace WebApplication1.Controllers
         public ActionResult Index()
         {
             IEnumerable<OwnerViewModel> model=null;
-            if (HttpContext.Session["list"] == null)
-            {
-                model = Service.GetData();
-                HttpContext.Session["list"] = model;
-            }
-            else
-            {
-                model=(IEnumerable<OwnerViewModel>)HttpContext.Session["list"] ;
-            }
-
+            model = Service.GetData();
             return View(model);
         }
 
         public ActionResult Delete(int id)
         {
-            Service.updateData((IEnumerable<OwnerViewModel>) HttpContext.Session["list"]);
             var model = Service.Delete(id);
-            HttpContext.Session["list"] = model;
             return null;
         }
 
         public FileStreamResult ExportPDF()
         {
-            var model = (IEnumerable<OwnerViewModel>)HttpContext.Session["list"];
             MemoryStream outputStream = new MemoryStream();
             MemoryStream workStream = new MemoryStream();
             Document document = new Document();
             PdfWriter.GetInstance(document, workStream);
             document.Open();
 
-            List<OwnerViewModel> lst = model.ToList();
+            List<OwnerViewModel> lst = Service.GetData().ToList();
             foreach (var item in lst)
             {
                 document.Add(new Paragraph($"Nombre {item.Name}"));
@@ -72,12 +60,11 @@ namespace WebApplication1.Controllers
 
         public ActionResult ExportExcel()
         {
-            var model = (IEnumerable<OwnerViewModel>)HttpContext.Session["list"];
             ExcelPackage container = new ExcelPackage();
             var workSheet = container.Workbook.Worksheets.Add("lista");
             try
             {
-                workSheet.Cells["A1"].LoadFromCollection(Collection: model, PrintHeaders: true);
+                workSheet.Cells["A1"].LoadFromCollection(Collection: Service.GetData().ToList(), PrintHeaders: true);
             }
             catch (Exception ex)
             {
@@ -118,17 +105,8 @@ namespace WebApplication1.Controllers
         public ActionResult GetOneProduct(int id)
         {
             OwnerViewModel data = null;
-            if (HttpContext.Session["list"] == null)
-            {
-                data = Service.GetOne(id);
-            }
-            else
-            {
-                var model = (IEnumerable<OwnerViewModel>)HttpContext.Session["list"];
-                data = Service.GetOne(id,model);
-            }
-           
-
+            data = Service.GetOne(id);
+            
             var newListToJson = new List<OwnerViewModel> { data };
             return Json(SerializeJson(newListToJson), JsonRequestBehavior.AllowGet);
         }
@@ -136,7 +114,6 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public ActionResult Edit(int ID, string name, string last1, string last2)
         {
-            Service.updateData((IEnumerable<OwnerViewModel>)HttpContext.Session["list"]);
             var objEdit= new OwnerViewModel
             {
                 ID = ID,
@@ -146,7 +123,6 @@ namespace WebApplication1.Controllers
             };
 
             var model= Service.Edit(objEdit);
-            HttpContext.Session["list"] = model;
             return null;
         }
 
@@ -161,7 +137,6 @@ namespace WebApplication1.Controllers
             };
 
             var model = Service.Add(objEdit);
-            HttpContext.Session["list"] = model;
             return null;
         }
 
