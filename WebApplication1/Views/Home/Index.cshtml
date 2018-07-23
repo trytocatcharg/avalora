@@ -1,0 +1,200 @@
+﻿@model List<Service.OwnerViewModel>
+
+@{
+    ViewBag.Title = "Home Page";
+}
+
+
+<button id="add" data-toggle='modal' data-target='#modalOwner' class="btn btn-primary" >Nuevo</button>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nombre </th>
+        <th>Apellido 1 </th>
+        <th>Apellido 2 </th>
+        <th></th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.ID</td>
+            <td>@item.Name</td>
+            <td>@item.Last1</td>
+            <td>@item.Last2</td>
+            <td><i data-toggle='modal' data-target='#modalOwner' style='' data-idindex='@item.ID'>Editar</i></td>
+            <td class="deleteLink" data-idindex='@item.ID'>Eliminar</td>
+        </tr>
+
+    }
+
+    </tbody>
+
+</table>
+
+<button class="btn btn-danger" id="Export_Excel">Export Excel</button>
+<br/>
+<a href="@Url.Action("ExportPDF", "Home")" target="_blank">Exportar PDF</a>
+
+<div id="modalOwner" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Modal Header</h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="ID">
+
+                <div class="form-group">
+                    <label for="name" class="control-label">Nombre</label>
+                    <input type="text" class="form-control" id="name">
+                </div>
+
+                <div class="form-group">
+                    <label for="last1" class="control-label">Apellido 1</label>
+                    <input type="text" class="form-control" id="last1">
+                </div>
+
+                <div class="form-group">
+                    <label for="last2" class="control-label">Apellido 2</label>
+                    <input type="text" class="form-control" id="last2">
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="submitModal">Aceptar</button>
+                <button type="button" class="btn" data-mode="hidden" id="cancelModal" data-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function() {
+        $(".deleteLink").click(function() {
+            var id = $(this).attr('data-idindex');
+            console.log("id " + id);
+
+            $.ajax({
+                url: '@Url.Action("Delete")',
+                type: 'POST',
+                data: "id=" + id,
+                success: function() {
+                    console.log("Elimino registro");
+                    window.location.href = 'Home/index';
+                }
+            });
+
+        });
+    });
+
+    $('#modalOwner').on('hidden.bs.modal', function (e) {
+        console.log("cierro modal");
+        window.location.href='@Url.Action("Index")';
+    });
+    
+    $('#modalOwner').on('shown.bs.modal', function(e) {
+
+        $("#ID").val('');
+        $("#name").val('');
+        $("#last1").val('');
+        $("#last2").val('');
+
+        var id = $(e.relatedTarget).attr('data-idindex');
+        if (typeof id != "undefined") {
+
+            $.ajax({
+                url: "@Url.Action("GetOneProduct", "Home")",
+                type: "GET",
+                data: "ID=" + id,
+                success: function(data) {
+                    if (data == '') {
+                        return false;
+                    }
+
+                    var jsonReturn = JSON.parse(data);
+
+                    // Guardar el ID del registro actual en el campo hidden 'iyear_paymentDocumentId':
+                    $("#ID").val(jsonReturn.Doc[0].ID);
+                    // Valores normales:
+                    $("#name").val(jsonReturn.Doc[0].Name);
+                    $("#last1").val(jsonReturn.Doc[0].Last1);
+                    $("#last2").val(jsonReturn.Doc[0].Last2);
+                },
+                error: function(jqXhr, textStatus, errorMessage) {
+                    console.log(errorMessage); // Optional
+                }
+            });
+        }
+
+    });
+
+
+
+    $('#submitModal').click(function (e) {
+
+        e.preventDefault();
+
+        if ($("#ID").val() == '') {
+            $.ajax(
+            {
+                url: '@Url.Action("Add", "Home")',
+                type: 'POST',
+                data: "name=" + $("#name").val() + "&last1=" + $("#last1").val() + "&last2=" + $("#last2").val(),
+                success: function (data) {
+                    //$("#modalOwner").modal('hide');
+                    $('#modalOwner').modal('toggle'); //or  $('#IDModal').modal('hide');
+                    window.parent.$('#modalOwner').data('bs.modal', null);
+                    return false;
+                }
+            });
+        } else {
+
+
+            $.ajax(
+            {
+                url: '@Url.Action("Edit", "Home")',
+                type: 'POST',
+                data: "ID=" + $("#ID").val() + "&name=" + $("#name").val() + "&last1=" + $("#last1").val() + "&last2=" + $("#last2").val(),
+                success: function (data) {
+                    //$("#modalOwner").modal('hide');
+                    $('#modalOwner').modal('toggle'); //or  $('#IDModal').modal('hide');
+                    window.parent.$('#modalOwner').data('bs.modal', null);
+                    return false;
+                }
+            });
+        }
+    });
+
+
+
+    $("button#Export_Excel").click(function () {
+        $.ajax(
+        {
+            url: '@Url.Action("ExportExcel", "Home")',
+            type: 'POST',
+            success: function (data) {
+
+                try {
+                    window.location = '@Url.Action("DownloadDocument", "Home")?fileGuid=' + data.FileGuid + '&filename=' + data.FileName;
+                } catch (e) {
+                    console.log(e);
+                } finally {
+                }
+
+            }
+        });
+        event.preventDefault();
+    });
+
+</script>
