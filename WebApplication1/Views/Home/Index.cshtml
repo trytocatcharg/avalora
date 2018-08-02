@@ -167,7 +167,6 @@
                 type: 'POST',
                 data: "ID=" + $("#ID").val() + "&name=" + $("#name").val() + "&last1=" + $("#last1").val() + "&last2=" + $("#last2").val(),
                 success: function (data) {
-                    //$("#modalOwner").modal('hide');
                     $('#modalOwner').modal('toggle'); //or  $('#IDModal').modal('hide');
                     window.parent.$('#modalOwner').data('bs.modal', null);
                     return false;
